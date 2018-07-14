@@ -1,2 +1,0 @@
-0 * * * * root supervisorctl start backup-hourly
-
