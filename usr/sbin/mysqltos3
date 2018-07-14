@@ -16,7 +16,7 @@ TMP_PATH=/tmp
 echo "Starting backing up the database to a file..."
 
 # dump all databases
-mysqldump --single-transaction --host=${MYSQL_HOST} --user=${MYSQL_USER} --password=${MYSQL_PASSWORD} ${MYSQL_DATABASE} > ${TMP_PATH}/dump_${TIMESTAMP}.sql
+mysqldump --single-transaction --host=${MYSQL_HOST} --user=root --password=${MYSQL_ROOT_PASSWORD} --all-databases > ${TMP_PATH}/dump_${TIMESTAMP}.sql
 
 echo "Done backing up the database to a file."
 echo "Starting compression..."
