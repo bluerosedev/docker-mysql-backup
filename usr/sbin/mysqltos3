@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 . /usr/sbin/env_secrets_expand
 
