@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh
 
 . /usr/sbin/env_secrets_expand
 
@@ -17,6 +17,10 @@ echo "Starting backing up the database to a file..."
 
 # dump all databases
 mysqldump --single-transaction --host=${MYSQL_HOST} --user=root --password=${MYSQL_ROOT_PASSWORD} --all-databases > ${TMP_PATH}/dump_${TIMESTAMP}.sql
+
+if [ $? -gt 0 ]; then
+    exit $?
+fi
 
 echo "Done backing up the database to a file."
 echo "Starting compression..."
