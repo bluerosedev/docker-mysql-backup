@@ -23,7 +23,7 @@ RUN apk add --no-cache \
     && mkdir -p /var/log/supervisor
 
 ADD ./usr/sbin/* /usr/sbin/
-ADD ./etc/cron.d/* /etc/cron.d/
+ADD ./etc/periodic/* /etc/periodic/
 ADD ./etc/supervisor.d/ /etc/supervisor.d/
 ADD ./root/.s3cfg.tmpl /root/.s3cfg.tmpl
 
