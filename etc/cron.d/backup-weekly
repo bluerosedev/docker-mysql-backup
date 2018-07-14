@@ -1,1 +1,1 @@
-0 3 2-31 * 0 root supervisorctl start backup-weekly
+45 3 2-31 * 0 root supervisorctl start backup-weekly
