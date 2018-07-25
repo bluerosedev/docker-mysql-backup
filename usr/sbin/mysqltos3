@@ -5,10 +5,10 @@
 # Adapted from https://github.com/woxxy/MySQL-backup-to-Amazon-S3
 
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
-PERIOD=${1-hour}
+PERIOD=${1-hourly}
+BACKUPS_TO_KEEP=3
 
 echo "Selected period: $PERIOD."
-
 
 #tmp path.
 TMP_PATH=/tmp
@@ -29,21 +29,22 @@ tar czf ${TMP_PATH}/${TIMESTAMP}.tar.gz -C ${TMP_PATH} dump_${TIMESTAMP}.sql
 
 echo "Done compressing the backup file."
 
-# we want at least two backups, two months, two weeks, and two days
-echo "Removing old backup (2 ${PERIOD}s ago)..."
-s3cmd del --recursive s3://${S3_BUCKET}/${S3_PATH}/previous_${PERIOD}/
-echo "Old backup removed."
+# upload
 
-# with Digital Ocean spaces mv seems to be a copy
-
-echo "Moving the backup from past $PERIOD to another folder..."
-s3cmd mv --recursive s3://${S3_BUCKET}/${S3_PATH}/${PERIOD}/ s3://${S3_BUCKET}/${S3_PATH}/previous_${PERIOD}/
-echo "Past backup moved."
-
-# upload all databases
 echo "Uploading the new backup..."
 s3cmd put -f ${TMP_PATH}/${TIMESTAMP}.tar.gz s3://${S3_BUCKET}/${S3_PATH}/${PERIOD}/
 echo "New backup uploaded."
+
+# Delete old backups
+
+BACKUP_COUNT=$(s3cmd ls s3://${S3_BUCKET}/${S3_PATH}/${PERIOD}/ | cut -d' ' -f8 | wc -l)
+BACKUPS_TO_DELETE=$(expr $BACKUP_COUNT - $BACKUPS_TO_KEEP)
+
+echo "Removing $BACKUPS_TO_DELETE old backups"
+
+s3cmd ls s3://${S3_BUCKET}/${S3_PATH}/${PERIOD}/ | head -n${BACKUPS_TO_DELETE} | cut -d' ' -f8 | while read file; do s3cmd rm $file; done
+
+echo "Old backups removed"
 
 echo "Removing the cache files..."
 # remove databases dump
