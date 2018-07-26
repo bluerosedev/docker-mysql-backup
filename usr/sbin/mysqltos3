@@ -37,14 +37,18 @@ echo "New backup uploaded."
 
 # Delete old backups
 
-BACKUP_COUNT=$(s3cmd ls s3://${S3_BUCKET}/${S3_PATH}/${PERIOD}/ | cut -d' ' -f8 | wc -l)
+BACKUP_COUNT=$(s3cmd ls s3://${S3_BUCKET}/${S3_PATH}/${PERIOD}/ | wc -l)
 BACKUPS_TO_DELETE=$(expr $BACKUP_COUNT - $BACKUPS_TO_KEEP)
 
-echo "Removing $BACKUPS_TO_DELETE old backups"
+if [ $BACKUPS_TO_DELETE -gt 0 ]; then
 
-s3cmd ls s3://${S3_BUCKET}/${S3_PATH}/${PERIOD}/ | head -n${BACKUPS_TO_DELETE} | cut -d' ' -f8 | while read file; do s3cmd rm $file; done
+    echo "Removing $BACKUPS_TO_DELETE old backups"
 
-echo "Old backups removed"
+    s3cmd ls s3://${S3_BUCKET}/${S3_PATH}/${PERIOD}/ | head -n${BACKUPS_TO_DELETE} | awk '{print $4}' | while read file; do s3cmd rm $file; done
+
+    echo "Old backups removed"
+
+fi
 
 echo "Removing the cache files..."
 # remove databases dump
