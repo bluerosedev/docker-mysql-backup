@@ -1,0 +1,46 @@
+#!/bin/sh
+
+. /usr/sbin/env_secrets_expand
+
+# Adapted from https://github.com/woxxy/MySQL-backup-to-Amazon-S3
+
+if [[ -z "${AWS_ACCESS_KEY}" || -z "${AWS_SECRET_KEY}" || -z "${S3_BUCKET}" || -z "${S3_PATH}" || -z "${S3_BUCKET_LOCATION}" ]]; then
+    echo "One or more AWS/S3 related environment variables are undefined. Exiting..."
+    exit 1
+fi
+
+if [[ -z "${MYSQL_DATABASE}" || -z "${MYSQL_USER}" || -z "${MYSQL_PASSWORD}" || -z "${MYSQL_HOST}" ]]; then
+    echo "One or more MYSQL environment variables are undefined. Exiting..."
+    exit 1
+fi
+
+if [[ -z "${RESTORE_FROM}" ]]; then
+    echo "RESTORE_FROM variable not set. Exiting ..."
+    exit 1
+fi
+
+echo "Attempting to restore from ${RESTORE_FROM} backup"
+
+#tmp path.
+TMP_PATH=/tmp
+
+BACKUP_PATH="s3://${S3_BUCKET}/${S3_PATH}/${RESTORE_FROM}/"
+
+BACKUP=$(s3cmd ls ${BACKUP_PATH} | grep tar.gz | tail -1 | sed -e s'/^.*\(s3:\/\/.*\)$/\1/')
+
+if [[ -z "${BACKUP}" ]]; then
+    echo "No backup found in ${BACKUP_PATH}. Exiting..."
+    exit 1
+fi
+
+echo "Backup found: ${BACKUP}"
+
+s3cmd get ${BACKUP} /tmp/restore.tar.gz
+tar xvf /tmp/restore.tar.gz -C /tmp
+
+SQL_FILE=$(ls /tmp/*.sql | head -n 1)
+
+mysql -u ${MYSQL_USER} -p${MYSQL_PASSWORD} -h ${MYSQL_HOST} ${MYSQL_DATABASE} < ${SQL_FILE}
+
+rm /tmp/restore.tar.gz      # cleanup
+rm /tmp/*.sql

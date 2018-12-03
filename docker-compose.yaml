@@ -1,0 +1,54 @@
+version: '3.6'
+
+services:
+
+  db:
+    image: mysql:5.6
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    restart: on-failure
+
+  db_backup:
+    build:
+      dockerfile: ./Dockerfile
+      context: ./
+    depends_on:
+      - db
+    environment:
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      S3_BUCKET_LOCATION: ${S3_BUCKET_LOCATION}
+      S3_BUCKET: ${S3_BUCKET}
+      S3_PATH: ${S3_PATH}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_HOST: db
+      RESTORE_FROM: ${RESTORE_FROM}
+    restart: on-failure
+
+  traefik:
+    image: bluerose/docker-traefik:develop
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/traefik.dev.toml:/etc/traefik/traefik.toml
+    restart: on-failure
+
+  adminer:
+    image: clue/adminer
+    depends_on:
+      - db
+    restart: on-failure
+    labels:
+      - "traefik.enable=true"
+      - "traefik.default.protocol=http"
+      - "traefik.backend=adminer"
+      - "traefik.frontend.rule=Host:adminer.bluerose.local"
+      - "traefik.port=80"
