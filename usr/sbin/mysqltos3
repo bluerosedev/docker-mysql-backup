@@ -4,6 +4,22 @@
 
 # Adapted from https://github.com/woxxy/MySQL-backup-to-Amazon-S3
 
+if [[ -z "${AWS_ACCESS_KEY}" || -z "${AWS_SECRET_KEY}" || -z "${S3_BUCKET}" || -z "${S3_PATH}" || -z "${S3_BUCKET_LOCATION}" ]]; then
+    echo "One or more AWS/S3 related environment variables are undefined. Exiting..."
+    exit 1
+fi
+
+if [[ -z "${MYSQL_DATABASE}" || -z "${MYSQL_USER}" || -z "${MYSQL_PASSWORD}" || -z "${MYSQL_HOST}" ]]; then
+    echo "One or more MYSQL environment variables are undefined. Exiting..."
+    exit 1
+fi
+
+if [[ -z "${BACKUP}" ]]; then
+    echo "BACKUP has not been set, exiting..."
+    exit 1
+fi
+
+
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M")
 PERIOD=${1-hourly}
 BACKUPS_TO_KEEP=3
